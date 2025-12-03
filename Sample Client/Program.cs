@@ -12,10 +12,10 @@ appBuilder.Logging
     .SetMinimumLevel(LogLevel.Trace);
 
 appBuilder.Services
-    .AddQotdClient(server =>
+    .AddQotdClient(client =>
     {
-        server.Mode = QotdClientMode.Udp;
-        server.Host = IPAddress.Loopback;
+        client.Mode = QotdClientMode.Tcp;
+        client.Host = IPAddress.IPv6Loopback;
     });
 
 IHost app = appBuilder.Build();

@@ -14,7 +14,7 @@
 
 
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>prerelease2</VersionSuffix>
+    <VersionSuffix>rc1</VersionSuffix>
 
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/DanielWillett/QOTD.NET</PackageProjectUrl>
