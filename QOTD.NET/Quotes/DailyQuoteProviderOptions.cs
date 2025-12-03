@@ -27,6 +27,7 @@ public class DailyQuoteProviderOptions
     /// <summary>
     /// System ID of the time zone to use for quotes, defaulting to the local time.
     /// </summary>
+    /// <remarks>Resolved using <see cref="TimeZoneInfo.FindSystemTimeZoneById"/>.</remarks>
     public string? TimeZone { get; set; }
 
     internal void UpdateFrom(DailyQuoteProviderOptions options)

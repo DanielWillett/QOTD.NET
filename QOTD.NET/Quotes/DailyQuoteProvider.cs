@@ -17,9 +17,9 @@ namespace QOTD.NET;
 /// </summary>
 public class DailyQuoteProvider : IQuoteProvider, IDisposable
 {
-    private readonly TimeSpan _rolloverTime;
-    private readonly TimeZoneInfo _timeZone;
-    private readonly string[]? _quotePool;
+    private TimeSpan _rolloverTime;
+    private TimeZoneInfo _timeZone;
+    private string[]? _quotePool;
     private DateTime _lastQuoteDate;
     private string? _currentQuote;
 
@@ -65,7 +65,18 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
 
 #if USE_MS_EXTENTIONS
 
+    /// <summary>
+    /// Creates a new <see cref="DailyQuoteProvider"/> using options and a logger.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"/>
+    /// <exception cref="FormatException">Invalid configuration.</exception>
+#if !NET9_0_OR_GREATER
+    [ActivatorUtilitiesConstructor]
+#endif
+    public DailyQuoteProvider(IOptionsMonitor<DailyQuoteProviderOptions> optionsMonitor, ILogger<DailyQuoteProvider> logger)
+        
 #if NET9_0_OR_GREATER
+        : this(null!, optionsMonitor, logger) { }
 
     /// <summary>
     /// Creates a new <see cref="DailyQuoteProvider"/> with a custom <see cref="TimeProvider"/> using options and a logger.
@@ -77,22 +88,11 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
         TimeProvider timeProvider,
         IOptionsMonitor<DailyQuoteProviderOptions> optionsMonitor,
         ILogger<DailyQuoteProvider> logger)
-        : this(optionsMonitor, logger)
     {
         _timeProvider = timeProvider;
-    }
-#endif
-
-    /// <summary>
-    /// Creates a new <see cref="DailyQuoteProvider"/> using options and a logger.
-    /// </summary>
-    /// <exception cref="ArgumentNullException"/>
-    /// <exception cref="FormatException">Invalid configuration.</exception>
-#if !NET9_0_OR_GREATER
-    [ActivatorUtilitiesConstructor]
-#endif
-    public DailyQuoteProvider(IOptionsMonitor<DailyQuoteProviderOptions> optionsMonitor, ILogger<DailyQuoteProvider> logger)
+#else
     {
+#endif
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         if (optionsMonitor == null)
@@ -110,23 +110,96 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
         {
             _timeZone = !string.IsNullOrEmpty(tz)
                 ? TimeZoneInfo.FindSystemTimeZoneById(tz)
+#if NET9_0_OR_GREATER
+                : _timeProvider?.LocalTimeZone ?? TimeZoneInfo.Local;
+#else
                 : TimeZoneInfo.Local;
+#endif
+
         }
         catch (TimeZoneNotFoundException ex)
         {
             throw new FormatException(ex.Message, ex);
         }
+        catch (InvalidTimeZoneException ex)
+        {
+            throw new FormatException(ex.Message, ex);
+        }
+
+        if (GetType() == typeof(DailyQuoteProvider))
+        {
+            _quotePool = options.Quotes.ToArray();
+
+            if (_quotePool.Length == 0)
+                throw new FormatException(Properties.Resources.DailyQuoteProviderPoolMustHaveElements);
+
+            if (Array.IndexOf(_quotePool, null) >= 0)
+                throw new FormatException(Properties.Resources.DailyQuoteProviderPoolContainsNull);
+        }
+
+        _optionsChangeMonitor = optionsMonitor.OnChange(HandleOptionsChanged);
+    }
+
+    private void HandleOptionsChanged(DailyQuoteProviderOptions options, string? optionName)
+    {
+        TimeSpan rolloverTime = options.RolloverTime;
+        if (rolloverTime < TimeSpan.Zero || rolloverTime.Days > 1)
+            rolloverTime = TimeSpan.Zero;
+
+        _rolloverTime = rolloverTime;
+        string? tz = options.TimeZone;
+        if (string.IsNullOrEmpty(tz))
+        {
+#if NET9_0_OR_GREATER
+            _timeZone = _timeProvider?.LocalTimeZone ?? TimeZoneInfo.Local;
+#else
+            _timeZone = TimeZoneInfo.Local;
+#endif
+        }
+        else
+        {
+            try
+            {
+                _timeZone = TimeZoneInfo.FindSystemTimeZoneById(tz);
+            }
+            catch (TimeZoneNotFoundException) { }
+            catch (InvalidTimeZoneException) { }
+        }
+
 
         if (GetType() != typeof(DailyQuoteProvider))
             return;
 
-        _quotePool = options.Quotes.ToArray();
+        List<string> quotesList = options.Quotes;
+        if (quotesList == null)
+            return;
 
-        if (_quotePool.Length == 0)
-            throw new FormatException(Properties.Resources.DailyQuoteProviderPoolMustHaveElements);
+        string[] quotes = quotesList.ToArray();
+        if (quotes.Length <= 0)
+            return;
 
-        if (Array.IndexOf(_quotePool, null) >= 0)
-            throw new FormatException(Properties.Resources.DailyQuoteProviderPoolContainsNull);
+        lock (this)
+        {
+            string[] oldQuotes = quotes;
+            bool eq = oldQuotes.Length == quotes.Length;
+            if (eq)
+            {
+                for (int i = 0; i < oldQuotes.Length; ++i)
+                {
+                    if (string.Equals(oldQuotes[i], quotes[i], StringComparison.Ordinal))
+                        continue;
+
+                    eq = false;
+                }
+            }
+
+            if (eq) return;
+
+            _quotePool = quotes;
+
+            // reset daily quote if quotes were updated
+            _lastQuoteDate = default;
+        }
     }
 
 #endif
@@ -136,7 +209,6 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
     /// Instead of pulling from a pool, the method 
     /// </summary>
     /// <param name="rolloverTime">The time of day at which a new quote will be chosen.</param>
-    /// <param name="dayDuration">The length of a 'day'.</param>
     /// <param name="timeZone">The time zone to use for time calculations. Defaults to local if <see langword="null"/>.</param>
     protected DailyQuoteProvider(TimeSpan rolloverTime, TimeZoneInfo? timeZone)
     {
@@ -237,7 +309,8 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
     /// <exception cref="InvalidOperationException">Not overridden when no quotes were passed to the constructor.</exception>
     protected virtual string GetNewDayQuote(DateTime date)
     {
-        if (_quotePool == null || _quotePool.Length == 0)
+        string[]? quotePool = _quotePool;
+        if (quotePool == null || quotePool.Length == 0)
             throw new InvalidOperationException();
 
 #if NET6_0_OR_GREATER
@@ -246,16 +319,16 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
         Random random = new Random();
 #endif
 
-        int index = random.Next(0, _quotePool.Length);
-        string q = _quotePool[index];
-        if (!ReferenceEquals(q, _currentQuote) || _quotePool.Length <= 1)
+        int index = random.Next(0, quotePool.Length);
+        string q = quotePool[index];
+        if (!ReferenceEquals(q, _currentQuote) || quotePool.Length <= 1)
             return q;
 
         if (index == 0)
             ++index;
         else
             --index;
-        return _quotePool[index];
+        return quotePool[index];
 
     }
 
