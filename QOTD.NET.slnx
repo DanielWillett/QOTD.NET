@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="QOTD.NET.Tests/QOTD.NET.Tests.csproj" Id="b5536084-8f45-4d4e-b432-922f2db56d7c" />
+  <Project Path="QOTD.NET/QOTD.NET.csproj" />
+  <Project Path="Sample Client/Sample Client.csproj" Id="668d11b1-952a-4ddc-9e3c-073369c22835" />
+  <Project Path="Sample Server/Sample Server.csproj" Id="f2eb9fac-3c3b-4a4f-b134-1d5a7b3ad7a4" />
+</Solution>
