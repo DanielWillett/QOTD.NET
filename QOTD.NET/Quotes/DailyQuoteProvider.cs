@@ -21,7 +21,6 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
     private readonly TimeZoneInfo _timeZone;
     private readonly string[]? _quotePool;
     private DateTime _lastQuoteDate;
-    private string? _previousQuote;
     private string? _currentQuote;
 
 #if USE_MS_EXTENTIONS
@@ -273,7 +272,6 @@ public class DailyQuoteProvider : IQuoteProvider, IDisposable
         string? value = Interlocked.CompareExchange(ref _currentQuote, newQuote, previousQuote);
         if (ReferenceEquals(value, previousQuote))
         {
-            _previousQuote = value;
             _lastQuoteDate = lclTime.TimeOfDay > _rolloverTime ? day : day.AddDays(-1);
             return true;
         }

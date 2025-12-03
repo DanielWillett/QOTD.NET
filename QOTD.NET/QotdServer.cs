@@ -135,10 +135,13 @@ public sealed class QotdServer : BaseQotdHost
             if (udpPort == 0)
                 udpPort = DefaultPort;
 
-            UdpClient udpClient = new UdpClient(AddressFamily.InterNetworkV6);
+            UdpClient udpClient = new UdpClient(dualMode ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork);
             UdpPort = udpPort;
-            udpClient.Client.DualMode = dualMode;
-            udpClient.Client.Bind(new IPEndPoint(IPAddress.IPv6Any, udpPort));
+            if (dualMode)
+            {
+                udpClient.Client.DualMode = true;
+            }
+            udpClient.Client.Bind(new IPEndPoint(dualMode ? IPAddress.IPv6Any : IPAddress.Any, udpPort));
             _udpMessageAccepted ??= UdpMessageReceived;
             _udpClient = udpClient;
             udpClient.BeginReceive(_udpMessageAccepted, udpClient);
@@ -157,9 +160,12 @@ public sealed class QotdServer : BaseQotdHost
             if (tcpPort == 0)
                 tcpPort = DefaultPort;
 
-            TcpListener tcpServer = new TcpListener(IPAddress.IPv6Any, tcpPort);
+            TcpListener tcpServer = new TcpListener(dualMode ? IPAddress.IPv6Any : IPAddress.Any, tcpPort);
             TcpPort = tcpPort;
-            tcpServer.Server.DualMode = dualMode;
+            if (dualMode)
+            {
+                tcpServer.Server.DualMode = true;
+            }
             tcpServer.Start();
             _tcpConnectionAccepted ??= TcpConnectionAccepted;
             _tcpServer = tcpServer;

@@ -15,7 +15,7 @@ appBuilder.Services
     .AddQotdClient(server =>
     {
         server.Mode = QotdClientMode.Udp;
-        server.Host = IPAddress.IPv6Loopback;
+        server.Host = IPAddress.Loopback;
     });
 
 IHost app = appBuilder.Build();
@@ -38,7 +38,7 @@ while (true)
 
     Console.WriteLine();
     Console.WriteLine("\"\"\"");
-    Console.WriteLine(quote);
+    Console.WriteLine("  " + quote);
     Console.WriteLine("\"\"\"");
 }
 

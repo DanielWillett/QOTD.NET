@@ -14,7 +14,11 @@
 
 
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>prerelease1</VersionSuffix>
+    <VersionSuffix>prerelease2</VersionSuffix>
+
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/DanielWillett/QOTD.NET</PackageProjectUrl>
+    <RepositoryUrl>$(PackageProjectUrl).git</RepositoryUrl>
 
     <PackageId>QOTD.NET</PackageId>
     <Title>Quote of the Day Protocol</Title>
@@ -29,6 +33,7 @@
     <NeutralLanguage>en-US</NeutralLanguage>
 
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
     <FileVersion>$(VersionPrefix).0</FileVersion>
 
 	</PropertyGroup>
@@ -36,6 +41,7 @@
   <ItemGroup>
 
     <None Include="$(SolutionDir)README.md" Pack="true" PackagePath="\" />
+    <None Include="$(SolutionDir)/QOTD.NET/icon.png" Pack="true" PackagePath="\" />
 
   </ItemGroup>
 

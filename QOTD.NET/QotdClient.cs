@@ -242,7 +242,6 @@ public sealed class QotdClient : BaseQotdHost
         byte[] buffer = RentBuffer();
         try
         {
-            //socket.Bind(new IPEndPoint(IPAddress.Any, 17));
             SocketReceiveFromResult result;
             do
             {

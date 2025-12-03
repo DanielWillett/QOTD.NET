@@ -12,7 +12,7 @@ appBuilder.Logging
 appBuilder.Services
     .AddDailyQuoteProvider(options =>
     {
-        options.RolloverTime = TimeSpan.Parse("22:22:00");
+        options.RolloverTime = TimeSpan.Parse("03:00:00");
         options.TimeZone = "America/New_York";
         options.Quotes =
         [
@@ -24,6 +24,7 @@ appBuilder.Services
     .AddQotdServer(server =>
     {
         server.Mode = QotdServerMode.Both;
+        server.DualMode = true;
     });
 
 IHost app = appBuilder.Build();
