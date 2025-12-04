@@ -48,7 +48,6 @@ appBuilder.Services
     .AddQotdServer(server =>
     {
         server.Mode = QotdServerMode.Both; // Tcp, Udp, Both
-        server.
     });
 
 IHost app = appBuilder.Build();
