@@ -12,11 +12,11 @@ The client is able to request one or more quotes from a server.
 HostApplicationBuilder appBuilder = new HostApplicationBuilder();
 
 appBuilder.Services
-    .AddQotdClient(server =>
+    .AddQotdClient(client =>
     {
-        server.Mode = QotdClientMode.Udp; // Tcp, Udp
-        server.Host = IPAddress.IPv6Loopback;
-        server.Port = 17;
+        client.Mode = QotdClientMode.Udp; // Tcp, Udp
+        client.Host = IPAddress.IPv6Loopback;
+        client.Port = 17;
     });
 
 IHost app = appBuilder.Build();
